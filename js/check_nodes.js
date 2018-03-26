@@ -5,7 +5,7 @@
 *
 ***********************************************/
 
-var _reqInterval = 500;
+var _reqInterval = 100;
 
 var LastBlockNum = -1;
 var LastNodeChecked = -1;
@@ -48,7 +48,7 @@ function getNode(nodeID){
 }
 
 function updateNodeInfo(node, nodeID){
-	//server_version
+
 
    	$( "#c1_"+blockProducerList[nodeID].bp_name ).removeClass( "bold" );
 	$( "#noderow_"+blockProducerList[nodeID].bp_name ).removeClass( "red" );
@@ -73,9 +73,16 @@ function updateNodeInfo(node, nodeID){
 			$( "#noderow_"+node.head_block_producer ).addClass( "greentblrow" );
 			LastProducer = node.head_block_producer;
 		}
+
+		//console.log(getProducerID(node.head_block_producer));
+		blockProducerList[getProducerID(node.head_block_producer)].producedTime =  Number(new Date());
+
+
+		blockProducerList[nodeID].lastCheck =  Number(new Date());
+		$( "#c4_"+node.head_block_producer ).html(node.head_block_num);
 	}
 	$( "#c3_"+blockProducerList[nodeID].bp_name ).html(node.head_block_num);
-
+	$( "#c6_"+blockProducerList[nodeID].bp_name ).html(parseInt("0x"+node.server_version));
 }
 
 function nodeError(reqest, nodeID){
@@ -84,16 +91,35 @@ function nodeError(reqest, nodeID){
 	errorNodes[blockProducerList[nodeID].bp_name] = blockProducerList[nodeID].bp_name;
 }
 
+function getProducerID(bpn){
+	for (var bp in blockProducerList){
+		if (blockProducerList[bp].bp_name == bpn) {
+			return bp;
+		}
+	}
+	return -1;
+}
+
 
 function updNodeCheckTime(){
 	var now = Number(new Date());
 
 	for (var bp in blockProducerList){
         var lastCheck = now;
+        var lastProduced = 0;
         if (blockProducerList[bp].lastCheck) lastCheck = blockProducerList[bp].lastCheck;
+
+		if (blockProducerList[bp].producedTime) lastProduced = blockProducerList[bp].producedTime;
 
 		var spentTime = GetHummanTime(Math.floor(now - lastCheck)/1000);
 		$('#c2_'+blockProducerList[bp].bp_name).html(spentTime);
+
+		if (lastProduced) {
+			var produceTime = GetHummanTime(Math.floor(now - lastProduced)/1000);
+			$('#c5_'+blockProducerList[bp].bp_name).html(produceTime);
+
+		}
+
 	}
 }
 
@@ -103,16 +129,22 @@ function initNodesList(){
         var bpN = blockProducerList[bp].bp_name;
  		var lastCheck = "--";
  		var lastNodeBlock = "";
+ 		var lastNodeBlockProduced = "--";
+ 		var lastNodeBlockProducedTime = "--";
+        var nodeVersion = "--";
  		var node_http_url = "<a href='http://"+blockProducerList[bp].node_addr+":"+blockProducerList[bp].port_http+"/v1/chain/get_info' target='_blank'>"+blockProducerList[bp].port_http+"</a>";
 
- 		$('#bpTable').append("<tr  id='noderow_"+bpN+"'> \
+ 		$('#bpTable').append("<tr id='noderow_"+bpN+"' class='tblrow text-center'> \
  								<td id='c0_"+bpN+"'>"+(bp*1+1)+"</td> \
  								<td id='c1_"+bpN+"'>"+blockProducerList[bp].bp_name+"</td> \
  								<td id='c2_"+bpN+"'>"+lastCheck+"</td> \
  								<td id='c3_"+bpN+"'>"+lastNodeBlock+"</td> \
+								<td id='c5_"+bpN+"'>"+lastNodeBlockProducedTime+"</td> \
+								<td id='c4_"+bpN+"'>"+lastNodeBlockProduced+"</td> \
 								<td>"+blockProducerList[bp].node_addr+"</td> \
  								<td>"+node_http_url+"</td> \
  								<td>"+blockProducerList[bp].port_p2p+"</td> \
+ 								<td id='c6_"+bpN+"'>"+nodeVersion+"</td> \
  								<td>"+blockProducerList[bp].organisation+"</td> \
  								<td>"+blockProducerList[bp].location+"</td> \
  							</tr>");
